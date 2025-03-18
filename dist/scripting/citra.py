@@ -49,8 +49,10 @@ class Citra:
     Communicates to the Azahar RPC server over UDP.
 
     Attributes:
-        address: The IP address of the RPC server.
         socket: UDP socket object used for communicating with Azahar.
+        address: The IP address of the RPC server.
+        port: The port number used to communicate with the Azahar RPC
+            server.
 
     Methods:
         is_connected() -> bool:
@@ -73,6 +75,7 @@ class Citra:
         """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.address = address
+        self.port = port
 
     def is_connected(self):
         """
@@ -137,7 +140,7 @@ class Citra:
             )
             request += request_data
 
-            _ = self.socket.sendto(request, (self.address, CITRA_PORT))
+            _ = self.socket.sendto(request, (self.address, self.port))
 
             raw_reply = self.socket.recv(MAX_PACKET_SIZE)
             reply_data = self._read_and_validate_header(
@@ -190,7 +193,7 @@ class Citra:
             )
             request += request_data
 
-            _ = self.socket.sendto(request, (self.address, CITRA_PORT))
+            _ = self.socket.sendto(request, (self.address, self.port))
 
             raw_reply = self.socket.recv(MAX_PACKET_SIZE)
             reply_data = self._read_and_validate_header(
