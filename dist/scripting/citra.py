@@ -32,6 +32,7 @@ CITRA_PORT = 45987
 CURRENT_REQUEST_VERSION = 1
 MAX_REQUEST_DATA_SIZE = 32
 MAX_PACKET_SIZE = 48
+TIMEOUT_SECONDS = 1
 
 # Define packet structure using compiled struct objects.
 HEADER_STRUCT = struct.Struct("4I")
@@ -87,6 +88,7 @@ class Citra:
         self.socket: socket.socket = socket.socket(
             socket.AF_INET, socket.SOCK_DGRAM
         )
+        self.socket.settimeout(TIMEOUT_SECONDS)
         self.address: str = address
         self.port: int = port
 
@@ -161,7 +163,11 @@ class Citra:
 
             _ = self.socket.sendto(request, (self.address, self.port))
 
-            raw_reply = self.socket.recv(MAX_PACKET_SIZE)
+            try:
+                raw_reply = self.socket.recv(MAX_PACKET_SIZE)
+            except TimeoutError:
+                return None
+
             reply_data = self._read_and_validate_header(
                 raw_reply, request_id, RequestType.ReadMemory
             )
@@ -218,7 +224,11 @@ class Citra:
 
             _ = self.socket.sendto(request, (self.address, self.port))
 
-            raw_reply = self.socket.recv(MAX_PACKET_SIZE)
+            try:
+                raw_reply = self.socket.recv(MAX_PACKET_SIZE)
+            except TimeoutError:
+                return False
+
             reply_data = self._read_and_validate_header(
                 raw_reply, request_id, RequestType.WriteMemory
             )
