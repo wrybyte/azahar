@@ -15,6 +15,15 @@ import enum
 import random
 import socket
 import struct
+import sys
+
+# The minimum supported Python version for scripting.
+MIN_PYTHON = (3, 10)
+
+if sys.version_info < MIN_PYTHON:
+    version = ".".join(str(i) for i in MIN_PYTHON)
+    sys.exit(f"Python version {version} or later is required.")
+
 
 # The default port used by Azahar.
 CITRA_PORT = 45987
@@ -63,7 +72,9 @@ class Citra:
             Write data to a memory address in Azahar.
     """
 
-    def __init__(self, address="127.0.0.1", port=CITRA_PORT):
+    def __init__(
+        self, address: str = "127.0.0.1", port: int = CITRA_PORT
+    ) -> None:
         """
         Initialise the RPC client.
 
@@ -73,11 +84,13 @@ class Citra:
             port: The port number used to communicate with the Azahar
                 RPC server. Defaults to port 45987.
         """
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.address = address
-        self.port = port
+        self.socket: socket.socket = socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM
+        )
+        self.address: str = address
+        self.port: int = port
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         Check if the Azahar RPC server is running.
 
@@ -93,15 +106,21 @@ class Citra:
         #       E.g.: The behaviour of `$ nc -vzu 127.0.0.1 45987`.
         return self.socket is not None
 
-    def _generate_header(self, request_type, data_size):
+    def _generate_header(
+        self, request_type: RequestType, data_size: int
+    ) -> tuple[bytes, int]:
         request_id = random.getrandbits(32)
         header = HEADER_STRUCT.pack(
             CURRENT_REQUEST_VERSION, request_id, request_type, data_size
         )
         return (header, request_id)
 
-    def _read_and_validate_header(self, raw_reply, expected_id, expected_type):
-        fields = HEADER_STRUCT.unpack(raw_reply[: HEADER_STRUCT.size])
+    def _read_and_validate_header(
+        self, raw_reply: bytes, expected_id: int, expected_type: RequestType
+    ) -> bytes | None:
+        fields: tuple[int, int, int, int] = HEADER_STRUCT.unpack(
+            raw_reply[: HEADER_STRUCT.size]
+        )
         reply_version, reply_id, reply_type, reply_data_size = fields
 
         if (
@@ -114,7 +133,7 @@ class Citra:
 
         return None
 
-    def read_memory(self, read_address, read_size):
+    def read_memory(self, read_address: int, read_size: int) -> bytes | None:
         r"""
         Read game data from a memory address in Azahar.
 
@@ -156,7 +175,11 @@ class Citra:
 
         return result
 
-    def write_memory(self, write_address, write_contents):
+    def write_memory(
+        self,
+        write_address: int,
+        write_contents: bytes | bytearray | memoryview,
+    ) -> bool:
         r"""
         Write data to a memory address in Azahar.
 
@@ -174,7 +197,7 @@ class Citra:
             >>> c.read_memory(0x100000, 4)
             b'\xff\xff\xff\xff'
 
-            >>> c.write_memory(0x100000, b"\x07\x00\x00\xeb")
+            >>> c.write_memory(0x100000, bytearray(b"\x07\x00\x00\xeb"))
             True
 
             >>> c.read_memory(0x100000, 4)
