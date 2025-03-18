@@ -12,6 +12,7 @@ Classes:
 __all__ = ["Citra"]
 
 import enum
+import errno
 import random
 import socket
 import struct
@@ -98,15 +99,25 @@ class Citra:
 
         Returns:
             True if it is possible to connect to Azahar, False otherwise.
-            Currently always returns True.
 
         Examples:
             >>> c.is_connected()
             True
         """
-        # TODO: Check if the server can be connected to in a meaningful way.
-        #       E.g.: The behaviour of `$ nc -vzu 127.0.0.1 45987`.
-        return self.socket is not None
+        # Creating a new socket is neccessary due to the nature of binding.
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            # Attempt to bind to the address Azahar uses.
+            try:
+                sock.bind((self.address, self.port))
+            except OSError as e:
+                # Address already in use.
+                if e.errno == errno.EADDRINUSE:
+                    return True
+
+                # Reraise if the exception was not `EADDRINUSE`.
+                raise
+
+        return False
 
     def _generate_header(
         self, request_type: RequestType, data_size: int
