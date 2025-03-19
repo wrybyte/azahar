@@ -210,7 +210,7 @@ public:
         }
         initialization_in_progress_suppress_logging = true;
         const auto& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
-        void(FileUtil::CreateDir(log_dir));
+        void(FileUtil::CreateFullPath(log_dir));
         Filter filter;
         filter.ParseFilterString(Settings::values.log_filter.GetValue());
         instance = std::unique_ptr<Impl, decltype(&Deleter)>(
